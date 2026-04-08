@@ -79,4 +79,69 @@ for(int count=0;count<V-1;count++) {
     }
 }
 }
+//johnson's algorithm to find all pairs shortest path
+void johnsonAlgorithm(int V,int E, struct Edge edges[]) {
+    //augmenting the graph by adding a dummy vertex and connecting it to all other vertices with 0 weight edges
+    int augmentedV=V+1;
+    int augmentedE=E+V;
+    struct Edge augmentedEdges[MAX_VERTICES*MAX_VERTICES];
+    //copying the original edges to the augmented graph
+    for(int i=0;i<E;i++){
+        augmentedEdges[i]=edges[i];
+    }
+    //adding edges from dummy vertex V to all other vertices (0 to V-1)
+    for (int i=0;i<V;i++){
+        augmentedEdges[E+i].src=V; //dummy vertex
+        augmentedEdges[E+i].dest=i; //connecting to all other vertices
+        augmentedEdges[E+i].weight=0; //weight of these edges is 0
+    }
+    //running bellmanford from dummy vertex to get potentials
+    int h[MAX_VERTICES]; //to store the potentials
+    if(bellmanFord(augmentedV, augmentedE,augmentedEdges,V,h)){
+        printf("graph contains a negative cycle . johnson's algp cannot proceed further\n");
+        return;
+    }
+    //reweighting the original edges
+    int reweightedGraph[MAX_VERTICES][MAX_VERTICES];
+    for(int i=0;i<V;i++){
+        for(int j=0;j<V;j++){
+            reweightedGraph[i][j]=INF; //initially all edges are set to inf as usual
+        }
+    }
+    //applying re weighting formula
+    for(int i=0;i<E;i++){
+        int u=edges[i].src;
+        int v=edges[i].dest;
+        int w=edges[i].weight;
+        reweightedGraph[u][v]=w+h[u]-h[v]; //reweighting the edge weight
+    }
+    //similarly running it for djikstra's algo from every original vertex
+    int finalDistances[MAX_VERTICES][MAX_VERTICES];
+    for(int u=0;u<V;u++){
+        int dist[MAX_VERTICES];
+        djikstra(V,reweightedGraph,u,dist);
+        //undoing the re weighting 
+        for(int v=0;v<V;v++){
+            if(dist[v]!=INF) {
+                finalDistances[u][v]=dist[v]+h[v]-h[u]; //undoing the reweighting to get the original distances
+            } else {
+                finalDistances[u][v]=INF; //if unreachable
+            }
+        } 
+    }
+    //printing the final all pairs shortest path matrix
+    printf("all pairs shortest path matrix:\n");
+    for(int i=0;i<V;i++){
+        for(int j=0;j<V;j++){
+            if(finalDistances[i][j]==INF) {
+                printf("INF\t");
+            } else {
+                printf("%d\t",finalDistances[i][j]);
+            }
+        }
+        printf("\n");
+    }
+}
 
+
+ 
